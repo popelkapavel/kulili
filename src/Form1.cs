@@ -41,7 +41,7 @@ namespace kulili
     Brush final_brush;
     int starticks,ticks;   
     bool show_time,show_clock; 
-		bool single=false;
+		bool single,dual,solo,auto=true;
 
 		static Form1() {
 		  string path=imagepath+@"\";
@@ -116,7 +116,7 @@ namespace kulili
       }
       final_text=null;
       full=Level.Init(level[l],ref lvl_w,ref lvl_h,ref board
-        ,my,my2,he,he2,single);
+        ,my,my2,he,he2,single,solo);
       if(mirror_x||mirror_y) {
         if(mirror_y) {
          for(int y=0,y2=lvl_h-1;y<y2;y++,y2--) {
@@ -199,7 +199,7 @@ namespace kulili
       TextReader tr=null;      
      try {
       DateTime filetime=File.GetLastWriteTimeUtc(filename);
-      if(filetime==rec_filetime) return;
+      if(filetime==rec_filetime||filetime.Year==1601) return;
       rec_filetime=filetime;
       tr=new StreamReader(filename,System.Text.Encoding.Default);
       string line;      
@@ -236,6 +236,12 @@ namespace kulili
       }
      }
     }
+    void Help() {
+      MessageBox.Show(@"-s : single, without second player
+ -d : dual both balls with one keys
+ -o : no enemy
+ -a : autopilot off","Help",MessageBoxButtons.OK);
+    }
     public Form1(string[] args) {
 		  int a=0;
       lev_file="levels.txt";
@@ -244,11 +250,17 @@ namespace kulili
 				if(arg=="-") break;
 			  switch(arg) {
 				 case "-s":single=true;break;
+         case "-d":dual=true;break;
+         case "-a":auto=false;break;
+         case "-o":solo=true;break;
+         case "-?":
+         case "-h":Help();break;
 				}
 			}
       if(args.Length>a) lev_file=args[a];
       string ext=Path.GetExtension(lev_file);
-      rec_file=string.IsNullOrEmpty(ext)?lev_file+"_rec":lev_file.Substring(0,lev_file.Length-ext.Length)+"_rec"+ext;
+      string rec="_rec"+(solo?"_solo":"")+(dual?"_dual":"");
+      rec_file=string.IsNullOrEmpty(ext)?lev_file+rec:lev_file.Substring(0,lev_file.Length-ext.Length)+rec+ext;
       level=Level.Load(lev_file,out lev_filetime);
       LoadRecords(rec_file);
       LoadLevel(lvl);
@@ -293,6 +305,9 @@ namespace kulili
        case Keys.Escape:
          if(start||stop) Close();
          else LoadLevel(lvl);
+         return true;
+       case Keys.L:
+         LoadLevel(lvl);
          return true;
        case Keys.Back:
         if(start&&lvl>0) lvl--;       
@@ -346,7 +361,8 @@ namespace kulili
        case Keys.C:show_clock^=true;if(!show_clock) dirtydraw=true;else DrawClock();break;
        case Keys.F10:
         Clip2Clip();
-        break;       
+        break;
+       case Keys.F:
        case Keys.F11:       
         ChangeMaxi();        
         return true;
@@ -469,6 +485,17 @@ namespace kulili
     public static IntPtr HKL=LoadKeyboardLayout("00000409",0);
 
 
+    void Key1(bool up,Dir d,My m) {
+      int dx=d==Dir.Left?-1:d==Dir.Right?1:0,dy=d==Dir.Up?-1:d==Dir.Down?1:0;
+      if(up) m.dir_remove(d); else { 
+        m.dir_add(d);m.dir_remove(Back(d));
+        try_key(m,dx,dy);AfterKeyDown(m);
+      }
+    }
+    void Key2(bool up,Dir d,My m) {
+      Key1(up,d,m);
+      if(dual&&my2.x>=0) Key1(up,d,m==my2?my:my2);	
+    }
     
     protected override void OnKeyUp(KeyEventArgs e) { OnKey(true,e);}
 		protected override void OnKeyDown(KeyEventArgs e) { OnKey(false,e);}
@@ -479,43 +506,51 @@ namespace kulili
       switch(e.KeyCode) {
 			 case Keys.W:
        case Keys.Q:
-			  if(up) my.dir_remove(Direction.Up); else { my.dir_add(Direction.Up);try_key(my,0,-1);AfterKeyDown(my);}
+        Key2(up,Dir.Up,my);
+			  //if(up) my.dir_remove(Direction.Up); else { my.dir_add(Direction.Up);try_key(my,0,-1);AfterKeyDown(my);}
 				break;
 			 case Keys.S:
        case Keys.A:
-			  if(up) my.dir_remove(Direction.Down); else { my.dir_add(Direction.Down);try_key(my,0,1);AfterKeyDown(my);}
+        Key2(up,Dir.Down,my);
+			  //if(up) my.dir_remove(Direction.Down); else { my.dir_add(Direction.Down);try_key(my,0,1);AfterKeyDown(my);}
 				break;
 			 case Keys.U:
 			 case Keys.E:
        case Keys.O:
-			  if(up) my.dir_remove(Direction.Left); else { my.dir_add(Direction.Left);try_key(my,-1,0);AfterKeyDown(my);}
+        Key2(up,Dir.Left,my);
+			  //if(up) my.dir_remove(Direction.Left); else { my.dir_add(Direction.Left);try_key(my,-1,0);AfterKeyDown(my);}
 				break;
 			 case Keys.I:
 			 case Keys.R:
        case Keys.P:
-			  if(up) my.dir_remove(Direction.Right); else { my.dir_add(Direction.Right);try_key(my,1,0);AfterKeyDown(my);}
+        Key2(up,Dir.Right,my);
+        //if(up) my.dir_remove(Direction.Right); else { my.dir_add(Direction.Right);try_key(my,1,0);AfterKeyDown(my);}
 				break;
        case Keys.Up:
 			 case Keys.NumPad7:
        case Keys.NumPad1:
-			  if(up) m2.dir_remove(Direction.Up); else { m2.dir_add(Direction.Up);try_key(m2,0,-1);AfterKeyDown(m2);}
+        Key2(up,Dir.Up,m2);
+			  //if(up) m2.dir_remove(Direction.Up); else { m2.dir_add(Direction.Up);try_key(m2,0,-1);AfterKeyDown(m2);}
 				break;
        case Keys.Down:
        case Keys.NumPad4:
        case Keys.NumPad0:
-			  if(up) m2.dir_remove(Direction.Down); else { m2.dir_add(Direction.Down);try_key(m2,0,1);AfterKeyDown(m2);}
+        Key2(up,Dir.Down,m2);
+			  //if(up) m2.dir_remove(Direction.Down); else { m2.dir_add(Direction.Down);try_key(m2,0,1);AfterKeyDown(m2);}
 				break;
        case Keys.Left:
        case Keys.NumPad8:
        case Keys.NumPad5:
        case Keys.NumPad2:
-			  if(up) m2.dir_remove(Direction.Left); else { m2.dir_add(Direction.Left);try_key(m2,-1,0);AfterKeyDown(m2);}
+        Key2(up,Dir.Left,m2);
+			  //if(up) m2.dir_remove(Direction.Left); else { m2.dir_add(Direction.Left);try_key(m2,-1,0);AfterKeyDown(m2);}
 				break;
        case Keys.Right:
        case Keys.NumPad9:
        case Keys.NumPad6:
        case Keys.NumPad3:
-			  if(up) m2.dir_remove(Direction.Right); else { m2.dir_add(Direction.Right);try_key(m2,1,0);AfterKeyDown(m2);}
+        Key2(up,Dir.Right,m2);
+			  //if(up) m2.dir_remove(Direction.Right); else { m2.dir_add(Direction.Right);try_key(m2,1,0);AfterKeyDown(m2);}
 				break;
       }
     }
@@ -613,33 +648,37 @@ namespace kulili
         if(!my.go_left&&!my.go_right&&!my.go_up&&!my.go_down) my.go_copy();
         if(!my2.go_left&&!my2.go_right&&!my2.go_up&&!my2.go_down) my2.go_copy();
         my.x2=my.x;my.y2=my.y;my2.x2=my2.x;my2.y2=my2.y;
-        int x2,y2;
-        for(int i=0;i<2;i++) {
-          My mi=i==0?my:my2,mj=i==0?my2:my;
+        int x2,y2,im=2;
+        for(int i=0;i<im;i++) {
+          My mi=i==1?my2:my,mj=i==1?my:my2;
           if(mi.x<0) continue;
           x2=mi.x;y2=mi.y;
-          Direction skip=Direction.None;          
+          Dir skip=Dir.None;          
           bool found=false;
-          List<Direction> kb2=mi.kb;
-          if(mous&&mi==my&&kb2.Count==0) {
-            kb2=new List<Direction>();
+          List<Dir> kb2=mi.kb;
+          if(mous&&(mi==my||dual)&&kb2.Count==0) {
+            kb2=new List<Dir>();
             int msx=mous_x,msy=mous_y;
-            if(msx<mi.x) kb2.Add(Direction.Left); else if(msx>mi.x) kb2.Add(Direction.Right);
-            if(msy<mi.y) kb2.Add(Direction.Up); else if(msy>mi.y) kb2.Add(Direction.Down);
+            if(msx<mi.x) kb2.Add(Dir.Left); else if(msx>mi.x) kb2.Add(Dir.Right);
+            if(msy<mi.y) kb2.Add(Dir.Up); else if(msy>mi.y) kb2.Add(Dir.Down);
           }
-          foreach(Direction dir in kb2) {
+          foreach(Dir dir in kb2) {
             if(0!=(dir&skip)) continue;
-            x2=(mi.x+(dir==Direction.Left?-1:0)+(dir==Direction.Right?1:0)+lvl_w)%lvl_w;
-            y2=(mi.y+(dir==Direction.Up?-1:0)+(dir==Direction.Down?1:0)+lvl_h)%lvl_h;
-            found=(x2!=mi.x||y2!=mi.y)&&!Level.IsWall(BoardXY(x2,y2))&&(x2!=he.x||y2!=he.y)&&(x2!=he2.x||y2!=he2.y)&&(x2!=mj.x||y2!=mj.y);
+            x2=(mi.x+(dir==Dir.Left?-1:0)+(dir==Dir.Right?1:0)+lvl_w)%lvl_w;
+            y2=(mi.y+(dir==Dir.Up?-1:0)+(dir==Dir.Down?1:0)+lvl_h)%lvl_h;
+            found=(x2!=mi.x||y2!=mi.y)&&!Level.IsWall(BoardXY(x2,y2))&&(x2!=he.x||y2!=he.y)&&(x2!=he2.x||y2!=he2.y);
+            if(found) {
+               found&=(x2!=mj.x||y2!=mj.y);
+               if(!found&&i==0) {im=3;goto ni;}
+            }
             if(found)
               break;
             skip|=Back(dir);
           }
           // autopilot
-          if(!found&&mi.kb.Count==0)
+          if(!found&&mi.kb.Count==0&&auto)
             for(int i2=0;i2<2;i2++) {
-              He hi=i2==0?he:he2,hj=i2==0?he2:he;
+              He hi=i2==1?he2:he,hj=i2==1?he:he2;
               if(Math.Abs(mi.x-hi.x)+Math.Abs(mi.y-hi.y)!=1||Math.Abs(mi.x-hj.x)+Math.Abs(mi.y-hj.y)==1) continue;
               x2=mi.x;y2=mi.y;
               bool wl=Level.IsWall(BoardXY(mi.x-1,mi.y));
@@ -669,6 +708,7 @@ namespace kulili
             mi.moves++;
             moves++;
           }
+         ni:;
         }
         if(my.x!=my.x2||my.y!=my.y2||my2.x!=my2.x2||my2.y!=my2.y2) {
           anim=anim_max;
@@ -801,25 +841,25 @@ namespace kulili
       }
     }
     
-    static Direction Back(Direction dir) {
-      return dir==Direction.Left?Direction.Right:dir==Direction.Right?Direction.Left:dir==Direction.Up?Direction.Down:Direction.Up;
+    static Dir Back(Dir dir) {
+      return dir==Dir.Left?Dir.Right:dir==Dir.Right?Dir.Left:dir==Dir.Up?Dir.Down:Dir.Up;
     }
   }
-  public enum Direction { None,Left=1,Right=2,Up=4,Down=8}  
+  public enum Dir { None,Left=1,Right=2,Up=4,Down=8}  
   public class He {
     public int x,y,x2,y2;
     public My my;
   }
   public class My:He {
-    public List<Direction> kb=new List<Direction>();
+    public List<Dir> kb=new List<Dir>();
     public bool go_up,go_down,go_left,go_right;
     public int emptys,moves;
 
-    public void dir_remove(Direction dir) {
+    public void dir_remove(Dir dir) {
       kb.Remove(dir);
     }
-    public void dir_add(Direction dir) {
-      if(dir==Direction.None) return; 
+    public void dir_add(Dir dir) {
+      if(dir==Dir.None) return; 
       kb.Remove(dir);
       kb.Insert(0,dir);
     }
@@ -828,11 +868,11 @@ namespace kulili
     }
     public void go_copy() {
       go_clear();
-      foreach(Direction d in kb) {
-        if(d==Direction.Left) go_left=true;
-        if(d==Direction.Right) go_right=true;
-        if(d==Direction.Up) go_up=true;
-        if(d==Direction.Down) go_down=true;
+      foreach(Dir d in kb) {
+        if(d==Dir.Left) go_left=true;
+        if(d==Dir.Right) go_right=true;
+        if(d==Dir.Up) go_up=true;
+        if(d==Dir.Down) go_down=true;
       }
     }
 
@@ -886,7 +926,7 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
      }
       return level;     
     }
-    public static int Init(string level,ref int lvl_w,ref int lvl_h,ref char[] chars,He my,He my2,He he,He he2,bool single) {      
+    public static int Init(string level,ref int lvl_w,ref int lvl_h,ref char[] chars,He my,He my2,He he,He he2,bool single,bool solo) {
       List<string> line=new List<string>();
       lvl_w=0;
       int i2=0;
@@ -910,8 +950,8 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
         for(x=0;x<row.Length;x++) {
           char rx=row[x];
           if(IsMy(rx)) { if(rx=='2') if(single) rx=Full;else {my2.x=x;my2.y=y;} else my.x=x;my.y=y;}
-          if(IsHe(rx)) { he.x=x;he.y=y;if(rx==HeFull) rx=Full;}
-          if(IsHe2(rx)) { he2.x=x;he2.y=y;if(rx==He2Full) rx=Full;}
+          if(IsHe(rx)) { if(!solo) {he.x=x;he.y=y;};if(rx==HeFull) rx=Full;}
+          if(IsHe2(rx)) { if(!solo) {he2.x=x;he2.y=y;};if(rx==He2Full) rx=Full;}
           if(IsFull(rx)) full++;          
           chars[y*lvl_w+x]=rx;
         }
