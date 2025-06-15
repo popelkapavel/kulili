@@ -12,8 +12,9 @@ namespace kulili
 {
   public partial class Form1 : Form {
     static int anim_max=7,timer_interval=30;
-    static string imagepath=@".";
-    static Image img_wall,img_full,img_empty,img_me,img_me2,img_he,img_he2;
+    static string imgdir="img",levdir="lev",exedir;
+    static Image img_wall,img_empty,img_me,img_me2,img_he,img_he2;
+    static Image[] img_full=new Image[10],img_up;
 //    static SoundPlayer move_sound,full_sound;
     static int ww=16,hh=16,scale=1,sx=0,sy=0;
     static My my=new My(),my2=new My();
@@ -34,19 +35,24 @@ namespace kulili
     static string help;
     Graphics gr2;
     Bitmap bm2;
-    string kb_lvl="";
+    string kb_lvl="",ff="021";
     int anim=0;
     bool mirror_x,mirror_y;
     string final_text;
     Brush final_brush;
     int starticks,ticks;   
     bool show_time,show_clock; 
-		bool single,dual,solo,auto=true;
+		bool single,dual,solo,auto=true;    
 
-		static Form1() {
-		  string path=imagepath+@"\";
-      img_wall=Image.FromFile(path+"wall.png");
-      img_full=Image.FromFile(path+"full.png");
+		static void LoadImage(params string[] paths) {
+    string wf="wall.png";
+      PathFile(ref wf,paths);
+		  string path=Path.GetDirectoryName(wf)+@"\";
+      img_wall=Image.FromFile(wf);
+      for(int i=0;i<10;i++) {
+        string f=path+("full"+(i==1?"":i+""))+".png";
+        if(File.Exists(f)) img_full[i]=Image.FromFile(f);        
+      }
 			img_empty=Image.FromFile(path+"empty.png");
 			img_me=Image.FromFile(path+"me.png");
 			string fn=path+"me2.png";
@@ -54,14 +60,22 @@ namespace kulili
 			img_he=Image.FromFile(path+"he.png");
 			fn=path+"he2.png";
 			if(File.Exists(fn)) img_he2=Image.FromFile(fn);else img_he2=img_he;
+			fn=path+"up.png";
+			if(File.Exists(fn)) {
+        img_up=new Image[4];
+        Image up=img_up[0]=Image.FromFile(fn),i;
+        i=img_up[1]=up.Clone() as Image;i.RotateFlip(RotateFlipType.Rotate90FlipNone);
+        i=img_up[2]=up.Clone() as Image;i.RotateFlip(RotateFlipType.Rotate180FlipNone);
+        i=img_up[3]=up.Clone() as Image;i.RotateFlip(RotateFlipType.Rotate270FlipNone);
+      }
 		}
     
     
     Image CharImage(char ch) {
       if(Level.IsWall(ch)) return img_wall;
-      if(Level.IsFull(ch)) return img_full;
+      int j;if(0<(j=Level.IsFullx(ch))) return img_full[j];
       return img_empty;
-    }
+    }    
     char BoardXY(int x,int y) {
       x=(x+lvl_w)%lvl_w;
       y=(y+lvl_h)%lvl_h;
@@ -240,25 +254,47 @@ namespace kulili
       MessageBox.Show(@"-s : single, without second player
  -d : dual both balls with one keys
  -o : no enemy
- -a : autopilot off","Help",MessageBoxButtons.OK);
+ -a : autopilot off
+ -F : draw order sequence of 0,1,2 letters
+ -f : draw full before up image (-F 012)
+ -i dir : image dictionary
+ -l dir : level dictionary
+ ","Help",MessageBoxButtons.OK);
+    }
+    static void PathFile(ref string fn,params string[] path) {
+      if(Path.IsPathRooted(fn)) return;
+      foreach(string d in path) if(d+""!="") {         
+         string f=Path.Combine(Path.IsPathRooted(d)?d:Path.Combine(exedir,d),fn);
+         if(File.Exists(f)) { fn=f;return;}
+      }        
     }
     public Form1(string[] args) {
 		  int a=0;
       lev_file="levels.txt";
 			while(a<args.Length&&args[a][0]=='-') {
-			  string arg=args[a++];
+			  string arg=args[a++],opt=null;
 				if(arg=="-") break;
+        if(arg.Length>2) {opt=arg.Substring(2);arg=arg.Substring(0,2);}
 			  switch(arg) {
 				 case "-s":single=true;break;
+         case "-f":ff="012";break;
+         case "-F":ff=opt!=null?opt:args[a++];break;
          case "-d":dual=true;break;
          case "-a":auto=false;break;
          case "-o":solo=true;break;
+         case "-l":levdir=opt!=null?opt:args[a++];break;
+         case "-i":imgdir=opt!=null?opt:args[a++];break;
          case "-?":
          case "-h":Help();break;
 				}
 			}
+      exedir=Path.GetDirectoryName(GetType().Assembly.Location);
+//      if(!Path.IsPathRooted(imgdir)) imgdir=Path.Combine(exedir,imgdir);
+      //if(!Path.IsPathRooted(levdir)) levdir=Path.Combine(exedir,levdir);
+      LoadImage(imgdir,exedir);
       if(args.Length>a) lev_file=args[a];
       string ext=Path.GetExtension(lev_file);
+      PathFile(ref lev_file,levdir,exedir);
       string rec="_rec"+(solo?"_solo":"")+(dual?"_dual":"");
       rec_file=string.IsNullOrEmpty(ext)?lev_file+rec:lev_file.Substring(0,lev_file.Length-ext.Length)+rec+ext;
       level=Level.Load(lev_file,out lev_filetime);
@@ -344,7 +380,7 @@ namespace kulili
         return true;
        case Keys.F1: {
          if(help==null) 
-          try { help=File.ReadAllText(Path.Combine(imagepath,"readme.txt"),Encoding.UTF8);
+          try { help=File.ReadAllText(Path.Combine(exedir,"readme.txt"),Encoding.UTF8);
           } catch {
            MessageBox.Show("Unable to read help file 'readme.txt'","Error",MessageBoxButtons.OK,MessageBoxIcon.Error);
            break;
@@ -404,8 +440,8 @@ namespace kulili
       for(int y=0;y<lvl_h;y++)
         for(int x=0;x<lvl_w;x++) {
           Image img=CharImage(board[y*lvl_w+x]);
-          if(img==img_full) gr2.DrawImageUnscaled(img_empty,x*w2,y*h2);
-          gr2.DrawImageUnscaled(img,x*w2,y*h2);
+          if(img==img_wall||img==img_empty) gr2.DrawImageUnscaled(img,x*w2,y*h2);
+          else DrawBG(x,y);
         }
       if(my.x>=0) gr2.DrawImageUnscaled(img_me,my.x*w2,my.y*h2);
       if(my2.x>=0) gr2.DrawImageUnscaled(img_me2,my2.x*w2,my2.y*h2);
@@ -626,6 +662,29 @@ namespace kulili
       return d==d2?p.my:d<d2?my:my2;
     }
 
+    void DrawBG(int x,int y) {
+      int j=Level.IsFullx(BoardXY(x,y));
+      Draw(gr2,img_empty,x,y);
+      if(j>0) {
+        foreach(char ch in ff) {
+          if(ch=='0') { if(img_full[0]!=null) Draw(gr2,img_full[0],x,y);}
+          else if(ch=='2') {
+            if(img_up!=null) {
+              int a=y*lvl_w+x;
+              if(y>0&&Level.IsFull(board[a-lvl_w])) Draw(gr2,img_up[0],x,y);
+              if(x+1<lvl_w&&Level.IsFull(board[a+1])) Draw(gr2,img_up[1],x,y);
+              if(y+1<lvl_h&&Level.IsFull(board[a+lvl_w])) Draw(gr2,img_up[2],x,y);
+              if(x>0&&Level.IsFull(board[a-1])) Draw(gr2,img_up[3],x,y);
+            }
+          } else if(ch=='1') Draw(gr2,img_full[j],x,y);        
+        }
+      }
+    }
+    void Dirty(int x,int y,ref List<int> dirty) {
+      if(dirty==null) dirty=new List<int>();
+      dirty.Add(x);dirty.Add(y);
+      DrawBG(x,y);
+    }
     private void timer1_Tick(object sender, EventArgs e) {
       tick++;                  
       if(dirtydraw) {
@@ -644,6 +703,7 @@ namespace kulili
         ticks=Environment.TickCount-starticks;
         if(show_time) DrawTime();
       }
+      List<int> dirty=null;
       if(anim==0&&!start&&!stop) {
         if(!my.go_left&&!my.go_right&&!my.go_up&&!my.go_down) my.go_copy();
         if(!my2.go_left&&!my2.go_right&&!my2.go_up&&!my2.go_down) my2.go_copy();
@@ -696,11 +756,17 @@ namespace kulili
           if(found) {
             mi.x=x2;mi.y=y2;
             int bidx=y2*lvl_w+x2;
-            bool isfull;
-            if((isfull=Level.IsFull(board[bidx]))) {
-              board[bidx]=Level.Empty;
+            bool isfull;int j;
+            if((isfull=(0<(j=Level.IsFullx(board[bidx]))))) {
+              board[bidx]=Level.Fullx(j);
               full--;
               if(full<1) stop=true;
+              if(j==1&&img_up!=null) {                
+                if(y2>0&&Level.IsFull(board[bidx-lvl_w])) Dirty(x2,y2-1,ref dirty);
+                if(x2+1<lvl_w&&Level.IsFull(board[bidx+1])) Dirty(x2+1,y2,ref dirty);
+                if(y2+1<lvl_h&&Level.IsFull(board[bidx+lvl_w])) Dirty(x2,y2+1,ref dirty);
+                if(x2>0&&Level.IsFull(board[bidx-1])) Dirty(x2-1,y2,ref dirty);
+              }
             } else {
               mi.emptys++;
               emptys++;
@@ -751,21 +817,17 @@ namespace kulili
           anim=anim_max+1;
       }
       if(anim>0) { //&&my.x2!=my.x||my.y2!=my.y||he.x2!=he.x||he.y2!=he.y) {
-        Draw(gr2,img_empty,my.x,my.y);
-        Draw(gr2,img_empty,my.x2,my.y2);
+        DrawBG(my.x,my.y); 
+        DrawBG(my.x2,my.y2); 
         if(my2.x>=0) {
-          Draw(gr2,img_empty,my2.x,my2.y);
-          Draw(gr2,img_empty,my2.x2,my2.y2);
+          DrawBG(my2.x,my2.y);
+          DrawBG(my2.x2,my2.y2);
         }
-        for(int i=0;i<2;i++) {
+        for(int i=0,j;i<2;i++) {
           He hi=i==0?he:he2;
           if(hi.x<0||hi.x==hi.x2&&hi.y==hi.y2) continue;
-          Draw(gr2,img_empty,hi.x,hi.y);
-          if(Level.IsFull(BoardXY(hi.x,hi.y)))
-            Draw(gr2,img_full,hi.x,hi.y);
-          Draw(gr2,img_empty,hi.x2,hi.y2);
-          if(Level.IsFull(BoardXY(hi.x2,hi.y2)))
-            Draw(gr2,img_full,hi.x2,hi.y2);
+          DrawBG(hi.x,hi.y);
+          DrawBG(hi.x2,hi.y2);
         }        
         int r=(anim_max+1-anim),r2=anim_max-r;
         DrawXY(gr2,img_me,(r*my.x+r2*my.x2)*img_wall.Width/anim_max,(r*my.y+r2*my.y2)*img_wall.Height/anim_max);
@@ -778,6 +840,12 @@ namespace kulili
         Graphics gr=this.CreateGraphics();        
         Rectangle src=new Rectangle(),dst=new Rectangle();
         int w2=img_wall.Width,h2=img_wall.Height;
+        if(dirty!=null) for(int i=0;i<dirty.Count;) {
+          int x=dirty[i++],y=dirty[i++];
+          src.X=x*w2-1;src.Y=y*h2-1;src.Width=w2+2;src.Height=h2+2;
+          dst.X=sx+x*ww-scale;dst.Y=sy+y*hh-scale;dst.Width=ww+2*scale;dst.Height=hh+2*scale;
+          gr.DrawImage(bm2,dst,src,GraphicsUnit.Pixel);  
+        }
         for(int i=0;i<2;i++) {
           My mi=i==0?my:my2;
           src.X=mi.x*w2-1;src.Y=mi.y*h2-1;src.Width=w2+2;src.Height=h2+2;
@@ -787,7 +855,6 @@ namespace kulili
           dst.X=sx+mi.x2*ww-scale;dst.Y=sy+mi.y2*hh-scale;
           gr.DrawImage(bm2,dst,src,GraphicsUnit.Pixel);
         }
-
 
         for(int i=0;i<2;i++) {
           He hi=i==0?he:he2;
@@ -883,7 +950,6 @@ namespace kulili
   public static class Level {
     public const char HeFull='!',HeEmpty='?';
     public const char He2Full='$',He2Empty='#';
-    public const char Full='.';
     public const char Empty=' ';
     
     public static List<string> Load(string filename,out DateTime filetime) {
@@ -946,13 +1012,13 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
       int full=0;      
       for(int y=0;y<line.Count;y++) {
         string row=line[y];
-        int x;
+        int x,j;
         for(x=0;x<row.Length;x++) {
           char rx=row[x];
-          if(IsMy(rx)) { if(rx=='2') if(single) rx=Full;else {my2.x=x;my2.y=y;} else my.x=x;my.y=y;}
-          if(IsHe(rx)) { if(!solo) {he.x=x;he.y=y;};if(rx==HeFull) rx=Full;}
-          if(IsHe2(rx)) { if(!solo) {he2.x=x;he2.y=y;};if(rx==He2Full) rx=Full;}
-          if(IsFull(rx)) full++;          
+          if(IsMy(rx)) { if(rx=='2') if(single) rx=Fullx(0);else {my2.x=x;my2.y=y;} else my.x=x;my.y=y;}
+          if(IsHe(rx)) { if(!solo) {he.x=x;he.y=y;};if(rx==HeFull) rx=Fullx(0);}
+          if(IsHe2(rx)) { if(!solo) {he2.x=x;he2.y=y;};if(rx==He2Full) rx=Fullx(0);}
+          if(0<(j=IsFullx(rx))) full+=j;          
           chars[y*lvl_w+x]=rx;
         }
         while(x<lvl_w) chars[y*lvl_w+x++]=Level.Empty;
@@ -963,7 +1029,13 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
       return Char.IsUpper(ch);
     }
     public static bool IsFull(char ch) {
-      return ch=='.'||ch==',';
+      return 0<IsFullx(ch);
+    }
+    public static char Fullx(int x) {
+      return x>0?(char)('_'+x):Empty;
+    }
+    public static int IsFullx(char ch) {
+      return ch=='.'||ch==','?1:1+@"abcdefghi".IndexOf(ch);
     }
     public static bool IsMy(char ch) {
       return char.IsDigit(ch);
@@ -973,7 +1045,7 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
     }
     public static bool IsHe2(char ch) {
       return ch==He2Full||ch==He2Empty;
-    }    
+    }
   }
   
 }
