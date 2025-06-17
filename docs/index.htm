@@ -44,11 +44,31 @@ command line
   -o : solo, without enemy
   -d : dual, control both balls
   -a : autopilot off
+  -F : draw order sequence of 0,1,2 letters (0 full0,1 full-full9,2 join)
+  -f : draw full before up image (-F 012)
+  -i dir : image dictionary
+  -l dir : level dictionary
   -h : help
 
-Download: (.net 4.0 required)<br>
+level file
 
-<a href="kulili016.zip">kulili016.zip</a> 30.4.2025 - v0.16 - solo option
+1,2 - player balls 1st and 2nd player
+!,? - enemy ball (? no dot)
+$,# - enemy ball 2
+.,, - dot
+a-i - dot,2 dots,..., 9 dots
+
+images 
+full    - dot ball
+full0   - base for all dots count
+full2-9 - multi dot
+up      - join up image (it is rotated for other directions)
+me,me2  - player balls
+he,he2  - enemy balls
+
+Download: (.net 4.0 required from 0.16)<br>
+
+<a href="kulili016.zip">kulili016.zip</a> 15.6.2025 - v0.16 - solo option
 <a href="kulili015.zip">kulili015.zip</a> 10.4.2017 - v0.15 - game time and clocks
 <a href="kulili014.zip">kulili014.zip</a> 23.4.2016 - v0.14 - check record filetime for read before write 
 <a href="kulili013.zip">kulili013.zip</a> 20.4.2016 - v0.13 - icon in exe 
