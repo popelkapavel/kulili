@@ -21,9 +21,5 @@
       <Language>en-US</Language>
       <LongDescription>Collect all dots with minimum moves like pacman.With just one predictable enemy.With 100 levels in editable text file.Level can be mirrored around x and y axis.Can be played with keyboard or mouse.</LongDescription>
     </Description>
-    <Description>
-      <Language>cs-CZ</Language>
-      <LongDescription>Sesbírejte všechny tečky s minimálním počtem pohybů jako Pac-Man. S pouze jedním předvídatelným nepřítelem. Se 100 úrovněmi v upravitelném textovém souboru. Úroveň lze zrcadlit kolem osy x a y. Lze hrát pomocí klávesnice nebo myši.</LongDescription>
-    </Description>
   </Program>
 </PAD>
