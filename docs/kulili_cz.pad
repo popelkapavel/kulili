@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PAD version="3.0">
+  <Application>
+    <Name>Kulili</Name>
+    <Version>0.16</Version>
+    <Publisher>Pavel Popelka</Publisher>
+    <HomePageURL>https://popelkapavel.github.io/kulili</HomePageURL>
+    <DownloadURL>https://popelkapavel.github.io/kulili/kulili016.zip</DownloadURL>
+    <Description>
+      <Short_Description>Sesbírejte všechny tečky s minimálním počtem tahů</Short_Description>
+      <Full_Description>Sesbírejte všechny tečky s minimálním počtem pohybů jako Pac-Man. S pouze jedním předvídatelným nepřítelem. Se 100 úrovněmi v upravitelném textovém souboru. Úroveň lze zrcadlit kolem osy x a y. Lze hrát pomocí klávesnice nebo myši.</Full_Description>
+    </Description>
+    <Categories>
+      <Category>Utilities</Category>
+    </Categories>
+  </Application>
+</PAD>

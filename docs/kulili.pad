@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PAD version="3.0">
+  <Application>
+    <Name>Kulili</Name>
+    <Version>0.16</Version>
+    <Publisher>Pavel Popelka</Publisher>
+    <HomePageURL>https://popelkapavel.github.io/kulili</HomePageURL>
+    <DownloadURL>https://popelkapavel.github.io/kulili/kulili016.zip</DownloadURL>
+    <Description>
+      <Short_Description>Collect all dots with minimum moves</Short_Description>
+      <Full_Description>Collect all dots with minimum moves like pacman.With just one predictable enemy.With 100 levels in editable text file.Level can be mirrored around x and y axis.Can be played with keyboard or mouse.</Full_Description>
+    </Description>
+    <Categories>
+      <Category>Utilities</Category>
+    </Categories>
+  </Application>
+</PAD>
