@@ -1,25 +1,97 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<PAD version="4.0">
-  <Company>
-    <Name>Kulili</Name>
-    <WebSiteURL>https://popelkapavel.github.io/kulili</WebSiteURL>
-    <Contact>
-      <AuthorFirstName>Pavel</AuthorFirstName>
-      <AuthorLastName>Popelka</AuthorLastName>
-    </Contact>
-  </Company>
-  <Program>
-    <ProgramName>Kulili</ProgramName>
-    <Version>0.16</Version>
-    <ReleaseDate>2025-06-15</ReleaseDate>
-    <Category>Games</Category>
-    <DownloadURL>https://popelkapavel.github.io/kulili/kulili016.zip</DownloadURL>
-    <FileInfo>
-      <FileSize>42864</FileSize>
-    </FileInfo>
-    <Description>
-      <Language>en-US</Language>
-      <LongDescription>Collect all dots with minimum moves like pacman.With just one predictable enemy.With 100 levels in editable text file.Level can be mirrored around x and y axis.Can be played with keyboard or mouse.</LongDescription>
-    </Description>
-  </Program>
-</PAD>
+<?xml version="1.0" encoding="utf-8"?>
+<XML_DIZ_INFO>
+  <MASTER_PAD_VERSION_INFO>
+    <MASTER_PAD_VERSION>4.0</MASTER_PAD_VERSION>
+    <MASTER_PAD_EDITOR>Notepad</MASTER_PAD_EDITOR>
+    <MASTER_PAD_INFO>Portable Application Description, or PAD for short, is a data set that is used by shareware authors to disseminate information to anyone interested in their software products. To find out more go to http://pad.asp-software.org</MASTER_PAD_INFO>
+  </MASTER_PAD_VERSION_INFO>
+  <Company_Info>
+    <Company_Name />
+    <Address_1 />
+    <Address_2 />
+    <City_Town />
+    <State_Province />
+    <Zip_Postal_Code />
+    <Country />
+    <Company_WebSite_URL />
+    <Contact_Info>
+      <Author_First_Name>Firstname</Author_First_Name>
+      <Author_Last_Name>Lastname</Author_Last_Name>
+      <Author_Email />
+      <Contact_First_Name>Firstname</Contact_First_Name>
+      <Contact_Last_Name>Lastname</Contact_Last_Name>
+      <Contact_Email />
+    </Contact_Info>
+    <Support_Info>
+      <Sales_Email />
+      <Support_Email />
+      <General_Email />
+      <Sales_Phone />
+      <Support_Phone />
+      <General_Phone />
+      <Fax_Phone />
+    </Support_Info>
+  </Company_Info>
+  <Program_Info>
+    <Program_Name>Kulili</Program_Name>
+    <Program_Version>0.16</Program_Version>
+    <Program_Release_Month>06</Program_Release_Month>
+    <Program_Release_Day>15</Program_Release_Day>
+    <Program_Release_Year>2025</Program_Release_Year>
+    <Program_Cost_Dollars />
+    <Program_Cost_Other_Code />
+    <Program_Cost_Other />
+    <Program_Type />
+    <Program_Release_Status />
+    <Program_Install_Support />
+    <Program_OS_Support />
+    <Program_Language />
+    <File_Info>
+      <File_Size_Bytes>42864</File_Size_Bytes>
+      <File_Size_K>42</File_Size_K>
+      <File_Size_MB>0.04</File_Size_MB>
+    </File_Info>
+    <Expire_Info>
+      <Has_Expire_Info />
+      <Expire_Count />
+      <Expire_Based_On />
+      <Expire_Other_Info />
+      <Expire_Month />
+      <Expire_Day />
+      <Expire_Year />
+    </Expire_Info>
+    <Program_Change_Info />
+    <Program_Category_Class>Games &amp; Entertainment::Arcade</Program_Category_Class>
+    <Program_Specific_Category />
+    <Program_System_Requirements />
+  </Program_Info>
+  <Program_Descriptions>
+    <English>
+      <Keywords>arcade,pacman </Keywords>
+      <Char_Desc_45>Collect all dots with minimum moves</Char_Desc_45>
+      <Char_Desc_80>Collect all dots with minimum moves like pacman.With just one predictable enemy.</Char_Desc_80>
+      <Char_Desc_250>Collect all dots with minimum moves like pacman.With just one predictable enemy.With 100 levels in editable text file.Level can be mirrored around x and y axis.Can be played with keyboard or mouse.</Char_Desc_250>
+      <Char_Desc_450 />
+      <Char_Desc_2000 />
+    </English>
+  </Program_Descriptions>
+  <Web_Info>
+    <Application_URLs>
+      <Application_Info_URL>https://popelkapavel.github.io/kulili</Application_Info_URL>
+      <Application_Order_URL />
+      <Application_Screenshot_URL>https://popelkapavel.github.io/kulili/kulili.png</Application_Screenshot_URL>
+      <Application_Icon_URL>https://popelkapavel.github.io/kulili/kulili.ico</Application_Icon_URL>
+      <Application_XML_File_URL>https://popelkapavel.github.io/kulili/kulili.xml</Application_XML_File_URL>
+    </Application_URLs>
+    <Download_URLs>
+      <Primary_Download_URL>https://popelkapavel.github.io/kulili/kulili016.zip</Primary_Download_URL>
+      <Secondary_Download_URL />
+      <Additional_Download_URL_1 />
+      <Additional_Download_URL_2 />
+    </Download_URLs>
+  </Web_Info>
+  <Permissions>
+    <Distribution_Permissions />
+    <EULA />
+  </Permissions>
+</XML_DIZ_INFO>
