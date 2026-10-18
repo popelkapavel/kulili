@@ -21,17 +21,19 @@ namespace kulili
     static He he=new He(),he2=new He();
     static bool mous,cursor=true;
     static int mous_x=-1,mous_y=-1;    
-    static int tick=0;
+    static int tick=0,ext_ticks;
     static bool dirtydraw=false;
     static int lvl_w,lvl_h,lvl=0;
     static char[] board;
     static int full=0,moves,emptys;
-    static string lev_file,rec_file;
+    static string lev_file,rec_file,savelvl;
+    int[] savei=new int[8];
+    string[] saves=new string[8];
     static DateTime lev_filetime,rec_filetime;
     static List<string> level;
     static SortedDictionary<int,int> records=new SortedDictionary<int,int>();
     static bool start,stop;
-    static int start2,players;
+    static int start2,players,saveticks;
     static string help;
     Graphics gr2;
     Bitmap bm2;
@@ -123,12 +125,13 @@ namespace kulili
       Text="KULILI - level "+(level+1)+(emptys<1?"":"  moves:"+emptys)+(isrec?" record:"+rec:"")+(moves<=emptys?"":" points:"+(moves-emptys));
     }
     
-    void LoadLevel(int l) {    
+    void LoadLevel(int l) {
+      SaveClear();
       if(lev_filetime!=File.GetLastWriteTimeUtc(lev_file)) {
         level=Level.Load(lev_file,out lev_filetime);
         if(l>=level.Count) l=lvl=level.Count-1;
       }
-      final_text=null;
+      final_text=null;ext_ticks=0;
       full=Level.Init(level[l],ref lvl_w,ref lvl_h,ref board
         ,my,my2,he,he2,single,solo);
       if(mirror_x||mirror_y) {
@@ -268,6 +271,35 @@ namespace kulili
          if(File.Exists(f)) { fn=f;return;}
       }        
     }
+    void SaveGame() {
+      savelvl=new string(board);
+      savei[0]=full;
+      savei[1]=emptys;
+      savei[2]=moves;
+      saves[0]=my.Save();
+      saves[1]=he.Save();
+      saves[2]=my2.Save();
+      saves[3]=he2.Save();
+      saveticks=ticks+timer_interval*anim_max;
+    }
+    void LoadSave() {
+      int i=0;
+      foreach(char ch in savelvl) board[i++]=ch;
+      full=savei[0];
+      emptys=savei[1];
+      moves=savei[2];
+      my.Load(saves[0]);
+      he.Load(saves[1]);
+      my2.Load(saves[2]);
+      he2.Load(saves[3]);
+      start=true;start2=0;stop=false;ext_ticks=saveticks;
+      final_text=null;
+      DrawBack();
+    }
+    void SaveClear() { savelvl=null;}
+    void LoadLvl() {
+      if(savelvl!=null&&!start) LoadSave();else LoadLevel(lvl);
+    }
     public Form1(string[] args) {
 		  int a=0;
       lev_file="levels.txt";
@@ -339,11 +371,11 @@ namespace kulili
       
       switch(keyData) {
        case Keys.Escape:
-         if(start||stop) Close();
-         else LoadLevel(lvl);
+         if(savelvl==null&&(start||stop)) Close();
+         else {if(start) SaveClear();LoadLvl();}
          return true;
        case Keys.L:
-         LoadLevel(lvl);
+         LoadLvl();
          return true;
        case Keys.Back:
         if(start&&lvl>0) lvl--;       
@@ -355,7 +387,7 @@ namespace kulili
            if(start) {
              if(shift) {shift=false;goto leveldown;} else goto levelup;
            }
-           LoadLevel(lvl);
+           LoadLvl();
          }
          return true;
        case Keys.PageDown:
@@ -378,6 +410,7 @@ namespace kulili
           }
         }
         return true;
+       case Keys.Tab: if(shift) {if(savelvl!=null) LoadSave();} else SaveGame();break;
        case Keys.F1: {
          if(help==null) 
           try { help=File.ReadAllText(Path.Combine(exedir,"readme.txt"),Encoding.UTF8);
@@ -509,6 +542,9 @@ namespace kulili
       gr.DrawImage(bm2,dst,src,GraphicsUnit.Pixel);  
       gr.Dispose();
     }    
+
+    [System.Runtime.InteropServices.DllImport("kernel32.dll")]
+    public static extern bool Beep(uint freq, uint ms);
       
     [System.Runtime.InteropServices.DllImport("user32.dll")]
     public static extern int MapVirtualKeyEx(int uCode, int uMapType, IntPtr dwhkl);
@@ -519,6 +555,7 @@ namespace kulili
     [System.Runtime.InteropServices.DllImport("user32.dll")]
     public static extern IntPtr LoadKeyboardLayout(string pwszKLID, int Flags);
     public static IntPtr HKL=LoadKeyboardLayout("00000409",0);
+
 
 
     void Key1(bool up,Dir d,My m) {
@@ -532,6 +569,8 @@ namespace kulili
       Key1(up,d,m);
       if(dual&&my2.x>=0) Key1(up,d,m==my2?my:my2);	
     }
+
+    Dictionary<Keys,int> kdown=new Dictionary<Keys, int>();
     
     protected override void OnKeyUp(KeyEventArgs e) { OnKey(true,e);}
 		protected override void OnKeyDown(KeyEventArgs e) { OnKey(false,e);}
@@ -539,6 +578,16 @@ namespace kulili
       int scan=MapVirtualKeyEx((int)e.KeyCode,4,GetKeyboardLayout(0));
       Keys k=(Keys)MapVirtualKeyEx(scan,3,HKL);
 		  My m2=my2.x>=0?my2:my;
+      Keys kc=e.KeyCode;
+      bool rep=false;
+      if(up) kdown.Remove(kc);
+      else {
+        int d,dt,t=Environment.TickCount;
+        rep=kdown.TryGetValue(e.KeyCode,out d)&&(dt=t-d)<1000;
+        kdown[kc]=t;
+        if(rep) t=1;
+      }
+      if(rep) return;
       switch(e.KeyCode) {
 			 case Keys.W:
        case Keys.Q:
@@ -700,7 +749,7 @@ namespace kulili
         if(start2>=anim_max) OnStart();
       }
       if(!start&&!stop) {
-        ticks=Environment.TickCount-starticks;
+        ticks=Environment.TickCount-starticks+ext_ticks;
         if(show_time) DrawTime();
       }
       List<int> dirty=null;
@@ -916,6 +965,18 @@ namespace kulili
   public class He {
     public int x,y,x2,y2;
     public My my;
+    public virtual string Save() {
+      return ""+x+","+y;
+    }
+    public virtual void Load(string st) {
+      int i=0;
+      foreach(string s in st.Split(',')) {
+        int v=int.Parse(s);
+        i++;
+        if(i==1) x=v;
+        else if(i==2) y=v;
+      }
+    }
   }
   public class My:He {
     public List<Dir> kb=new List<Dir>();
@@ -941,6 +1002,23 @@ namespace kulili
         if(d==Dir.Up) go_up=true;
         if(d==Dir.Down) go_down=true;
       }
+    }
+    
+    public override string Save() {
+      return ""+x+","+y+","+moves+","+emptys;
+    }
+    public override void Load(string st) {
+      int i=0;
+      foreach(string s in st.Split(',')) {
+        int v=int.Parse(s);
+        i++;
+        if(i==1) x=v;
+        else if(i==2) y=v;
+        else if(i==3) moves=v;
+        else if(i==4) emptys=v;
+      }
+      kb.Clear();
+      go_up=go_down=go_left=go_right=false;
     }
 
 		public override string ToString() { return "("+x+","+y+","+emptys+")"; }
